@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Greenshot.Linux</RootNamespace>
+    <AssemblyName>greenshot</AssemblyName>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Greenshot.Linux.Core\Greenshot.Linux.Core.csproj" />
+    <ProjectReference Include="..\Greenshot.Linux.Editor\Greenshot.Linux.Editor.csproj" />
+    <ProjectReference Include="..\Greenshot.Linux.Plugins\Greenshot.Linux.Plugins.csproj" />
+    <ProjectReference Include="..\Greenshot.Linux.Recipes\Greenshot.Linux.Recipes.csproj" />
+    <ProjectReference Include="..\Greenshot.Linux.RecipeEditor\Greenshot.Linux.RecipeEditor.csproj" />
+    <!-- greenshot-mcp next to greenshot: Greenshot only accepts it from its own folder -->
+    <ProjectReference Include="..\Greenshot.Linux.Mcp\Greenshot.Linux.Mcp.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+    <!-- The emoji font for the emoji picker, the same one draws the emoji elements -->
+    <AvaloniaResource Include="..\Greenshot.Linux.Editor\Emoji\Twemoji.Mozilla.ttf" Link="Assets\Fonts\Twemoji.Mozilla.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The language packs of Greenshot and its plugins (the same as in the Windows version), and the Linux texts -->
+    <None Include="Languages\greenshot*.ini" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

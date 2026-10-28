@@ -1,137 +1,317 @@
-Greenshot - a free screenshot tool optimized for productivity
-=============================================================
+# Greenshot for Linux (Wayland)
 
-Welcome to the source repository for Greenshot.
+A Linux version of [Greenshot](https://getgreenshot.org/), built for Wayland desktops. This repository only has the Linux
+version; the Windows version is in [greenshot/greenshot](https://github.com/greenshot/greenshot). It uses WPF, WinForms,
+GDI+ and Win32, none of which exist on Linux, so this is a separate application which reads the same settings, language
+packs, `.greenshot` files and recipes. The UI is
+[Avalonia](https://avaloniaui.net/), images are handled with SkiaSharp, and the screen is captured through the
+compositor or the xdg-desktop-portal.
 
-What is Greenshot?
-------------------
+The goal is every feature of Greenshot 1.4 that Wayland allows, with the closest equivalent for the ones it doesn't.
+What is done and what isn't possible on Linux is in the [Roadmap](#roadmap).
 
-Greenshot is a light-weight screenshot software tool for Windows with the following key features:
+## What works now
 
-* Quickly create screenshots of a selected region, window or fullscreen.
-* Easily annotate, highlight or obfuscate parts of the screenshot.
-* Export the screenshot in various ways: save to file, send to printer, copy to clipboard, attach to e-mail, send Office programs or upload to photo sites like Flickr or Picasa, and others.
-and a lot more options simplifying creation of and work with screenshots every day.
+| Feature | Status |
+|---|---|
+| Capture region, with frozen screen, crosshair, zoomer, size label, keys (F1) and info (I) panels | ✅ |
+| Capture full screen (all monitors) | ✅ |
+| Capture last region | ✅ |
+| Capture window: hover or Tab to pick, or click a window in region mode | ✅ Sway, Hyprland |
+| Capture active window | ✅ Sway, Hyprland |
+| Mouse pointer in the capture (`CaptureMousepointer`) | ✅ with grim |
+| Destinations: Open in image editor, Save, Save as… (desktop file dialog), Copy to clipboard, Picker | ✅ |
+| Destinations: Printer (print dialog of the desktop, the print options of Windows), E-Mail (mail program with the capture attached) | ✅ Print / Email portal, else `lp` / `xdg-email` |
+| Destinations: copy the text (OCR), copy the text of QR codes and barcodes (the link opens from the notification) | ✅ OCR needs tesseract |
+| QR codes on the capture screen: found while selecting and framed, a click copies the text or opens the link; the ones in the selection are listed in the notification (Settings > Capture) | ✅ |
+| Capture text: `T` on the capture screen, the text of the selection goes to the clipboard | ✅ needs tesseract |
+| Fixed size: `F` on the capture screen, an area of a chosen size follows the cursor (1-9 and PageUp/PageDown pick the size, C the corner the cursor holds, Alt places it without snapping); the sizes are `FixedCaptureSizes` and the last region captures | ✅ |
+| Filename patterns (`${capturetime}`, `${title}`, `${NUM}`, `${YYYY}`, padding, substrings, …) | ✅ same as Windows |
+| Notifications with thumbnail; click opens the file | ✅ |
+| Tray icon and menu | ✅ (StatusNotifierItem) |
+| Command line, single instance: `greenshot capture region` etc., and the options of greenshot-cli (`-l`, `-i`, `-r`, see [Command line](#command-line)) | ✅ |
+| Global hotkeys via the GlobalShortcuts portal | ✅ KDE, GNOME 48+, Hyprland |
+| `greenshot.ini` in the Windows format, unknown keys are kept | ✅ |
+| Settings window: language, theme, autostart, notifications, hotkeys, capture, output, destinations, editor | ✅ |
+| Welcome window at the first start, with a check of what the desktop offers (capturing, clipboard, tray, notifications, hotkeys) | ✅ |
+| The 40 languages of the Windows version (shared files, see [Languages](#languages)) | ✅ |
 
-Being easy to understand and configurable, Greenshot is an efficient tool for project managers, software developers, technical writers, testers and anyone else creating screenshots.
+### Plugins
 
+The plugins of the Windows version are built in; Settings → Plugins switches them on or off and has their settings.
+The keys are the ones of Windows: `ExcludePluginNames` and `ExcludeDestinations` for the user, `BlockedPluginNames`,
+`AllowedPluginNames`, `BlockedDestinations` and `AllowedDestinations` for an administrator in `greenshot-fixed.ini`
+(`/etc/greenshot/` or next to the program), see [docs/plugins-and-destinations.md](docs/plugins-and-destinations.md).
 
-[If you find that Greenshot saves you a lot of time and/or money, you are very welcome to support the development of this screenshot software.](https://getgreenshot.org/support/)
+| Plugin | Status |
+|---|---|
+| External command: open the capture in GIMP, Krita, Pinta, KolourPaint (added when installed) or any program | ✅ `[ExternalCommand]` like on Windows |
+| PDF: save as PDF with page size, margins and scaling | ✅ |
+| Custom uploader: ShareX `.sxcu` files, with the checks of Windows, your values, the reminder and the list of uploads | ✅ uploaders and uploads in the keyring |
+| Box, Dropbox | ✅ with your own app key, see below |
+| Jira: attach to an issue of your favourite filters or by key, with a comment that can show the capture; issues seen in window titles become destinations | ✅ titles on Sway, Hyprland |
+| Confluence: attach to a page found by search or in the page tree, a new version or another name when the name is used | ✅ |
+| MCP server | ⏳ next |
 
-Trademark and Logo Usage Policy
--------------------------------
+Keys, tokens and uploaders are kept in the keyring of the desktop (Secret Service: GNOME Keyring, KWallet, KeePassXC) with
+`secret-tool`, or without it in `~/.config/greenshot/secrets.ini` readable only by you. The Windows version obfuscates them
+in greenshot.ini instead.
 
-The Greenshot logo and trademark are the property of the Greenshot development team. Unauthorized use of the logo and trademark is generally prohibited. However, we allow the use of the Greenshot name and logo in the following contexts:
+Box and Dropbox need an app registered with the service: the official Windows build has its keys from the build server,
+which a self built Linux version doesn't. Register an app in the developer console of the service with the redirect
+address `http://127.0.0.1` and enter its key and secret in the settings (`ClientId` and `ClientSecret` in `[Box]` or
+`[Dropbox]`, or `GREENSHOT_BOX_CLIENT_ID` and so on). The first upload opens the browser to sign in.
 
-* In blog posts, articles, or reviews that discuss or promote the Greenshot, provided that the usage is fair and does not imply endorsement by Greenshot.
-* In educational materials or presentations that accurately represent the project.
+Jira and Confluence (the Atlassian plugin of Windows) work with Cloud and Data Center: Cloud with your e-mail address and
+an API token, Data Center with user name and password or a personal access token. The credentials go to the keyring when
+"Remember" is checked; Jira and Confluence on the same site share them. Windows watches the titles of all windows for issue
+keys (a browser showing GS-123, a mail about it) and offers those issues in the picker; Wayland has no such hook, so on Sway
+and Hyprland Greenshot asks the compositor for the titles every 5 seconds, elsewhere only the title of the capture counts.
 
-Please refrain from using the Greenshot logo and trademark in any promotional materials, products, or in a manner that may cause confusion or imply endorsement without prior written permission.
+### The image editor
 
-If you have any questions or wish to seek permission for other uses, please contact us.
+| Feature | Status |
+|---|---|
+| Tools: select, rectangle, ellipse, line, arrow, freehand, text, speech bubble, step label, highlight, obfuscate, crop, emoji | ✅ |
+| Emoji: the picker with all Unicode emoji by group and their skin tones, drawn with the Twemoji font of Windows | ✅ |
+| Crop out vertically / horizontally (C again cycles the crop mode), cut edges: straight, zig-zag, wavy or torn, with a gap and shadow | ✅ |
+| Torn edges as element (Ctrl+T): change its sides, teeth, shadow and color later, new random edges, apply to the image | ✅ |
+| Highlight: text marker, area (blur and darken the rest), grayscale the rest, magnify | ✅ |
+| Obfuscate: pixelate, blur | ✅ |
+| Properties per tool: line, fill, thickness, shadow, arrow heads, font, size, bold, italic, alignment, …, the last used values are remembered | ✅ |
+| Select, move, resize with handles, rubber band, Shift for squares and 15° lines | ✅ |
+| Undo / redo, cut / copy / paste / duplicate of elements, paste an image from the clipboard | ✅ |
+| Bring to front / forward / backward / back, step label counter start | ✅ |
+| Image: crop, auto crop, resize, rotate, enlarge / shrink the canvas, border, drop shadow, torn edges, grayscale, invert, clear | ✅ |
+| Settings of the drop shadow and the torn edges (Image menu), stored like on Windows | ✅ |
+| Zoom (Ctrl + wheel, Ctrl +/-/0/9) | ✅ |
+| Save, save as (also as editable `.greenshot`), copy, export to every destination, ask to save when closing | ✅ |
+| Open images and `.greenshot` files: tray menu, `greenshot <file>`, "Open with" in file managers, the clipboard | ✅ |
+| `.greenshot` files of the Windows editor: the elements open editable (shapes, text, speech bubbles, arrows, freehand, step labels, highlight, obfuscate, emoji, cut and torn edges, images, icons, SVG) | ✅ Windows metafiles (WMF/EMF) are left out with a note |
+| Redact text (OCR): find text and pixelate or blur it | ✅ |
+| QR codes and barcodes (Object > Insert QR / Barcode): 15 formats, QR codes for text, WiFi, contacts, SEPA transfers, email, calendar events, phone, SMS and places; colors, rounded dots, stays sharp when resized, double-click changes it | ✅ |
+| Tabs: new captures open as a tab of the editor used last (Settings > Editor), "+" for a new image, close, move left / right or to a new window (context menu of a tab), Ctrl+W / Ctrl+Tab / Ctrl+PageUp/PageDown | ✅ dragging tabs between windows: use the context menu |
 
-Thank you for your understanding and cooperation.
+The keys are the ones of the Windows editor: R rectangle, E ellipse, L line, A arrow, F freehand, T text, S speech bubble,
+I step label, H highlight, O obfuscate, M emoji, C crop (C again: crop out vertically, horizontally; Enter applies, Esc cancels),
+Z resize, Esc select tool;
+Ctrl+Z/Y undo/redo, Ctrl+C/X/V/D copy/cut/paste/duplicate, Delete, Ctrl+A, arrows move (Shift or Ctrl: 10 pixels),
+PageUp/PageDown/Home/End arrange, Ctrl+S save, Ctrl+Shift+S save as, Ctrl+Shift+C copy the image,
+Ctrl+Q drop shadow, Ctrl+B border, Ctrl+T torn edges (an element), Ctrl+G grayscale, Ctrl+I invert, Ctrl+, / Ctrl+. rotate,
+Ctrl+Shift++ / Ctrl+Shift+- enlarge / shrink the canvas.
 
+Linux `.greenshot` files have the layout of the Windows ones (a PNG, then the elements and a marker), but store the
+elements as JSON with the marker `GreenshotJ1.00`. The Windows editor can't read their elements; any image viewer
+shows them, they start with a PNG. The elements of Windows files (BinaryFormatter) are read with the NRBF decoder of
+.NET, which only reads the records and never creates types named in the file, so a file can't run code.
 
-About this repository
----------------------
-This is the ongoing development branch for future Greenshot releases. 
+## Requirements
 
-Documentation
--------------
+- .NET 10 SDK (to build)
+- One way to capture the screen:
+  - `grim` on wlroots compositors (Sway, Hyprland, river, Wayfire, …), the fastest and includes the mouse pointer, or
+  - `xdg-desktop-portal` with a backend for the desktop (GNOME, KDE, wlr), used automatically when grim can't capture
+- `wl-clipboard` (`wl-copy`) for the clipboard
+- `tesseract` and its language packs for OCR, capturing text and redacting text (optional),
+  Fedora: `sudo dnf install tesseract tesseract-langpack-eng tesseract-langpack-deu`
+- A notification daemon (mako, dunst, GNOME, KDE) for notifications
+- A tray that supports StatusNotifierItem (KDE, Waybar, the AppIndicator extension on GNOME)
+- XWayland (Avalonia renders through it)
 
-The [documentation](docs/README.md) in `docs/` describes Greenshot 1.3, the current release. What is new in Greenshot 1.4, which is developed here, is described in [docs/vNext](docs/vNext/README.md).
+Fedora: `sudo dnf install dotnet-sdk-10.0 grim wl-clipboard xdg-desktop-portal`
 
-Releases
---------
+### Recipes
 
-You can find a list of all releases (stable and unstable) in the [Github releases](https://github.com/greenshot/greenshot/releases) or in the [version history on our website](https://getgreenshot.org/version-history/).
-The [downloads page on our website](https://getgreenshot.org/downloads/) always links to the latest stable release.
+The recipes of Windows ([docs/capture-recipes.md](docs/capture-recipes.md)) run on Linux: the same `.gsrecipe.json` files, steps, options, automatic
+steps (border, drop shadow, caption, …), triggers and approval. The built-in captures are recipes too, so automatic steps
+switched on in Settings → Recipes apply to them.
 
-Getting Started for Developers:
--------------------------------
+- Import a recipe with the tray menu *Recipes → Import Recipe…*, by opening a `.gsrecipe.json` file with Greenshot, or with
+  `RecipeFiles` in `[Recipe]`. Before it runs the first time it shows what it does; approved recipes are kept in
+  `~/.local/state/greenshot/recipe_trust.dat`, encrypted with a key in the keyring.
+- Run one with `greenshot recipe <id> [key=value …]`, its hotkey, its tray menu entry or the editor's Recipes menu.
+- The tray's *Quick preferences* has the switches recipes mark with `quickSettings` under *Automatic steps*.
+- Triggers: hotkey (portal or a compositor binding to `greenshot recipe <id>`, listed in Settings → General), context
+  menu, editor menu, clipboard change (`wl-paste --watch`), command line.
+- Steps the Linux version does differently: `RecordVideo` uses `wf-recorder`; window sources need Sway or Hyprland, like
+  window capture.
+- The **recipe manager** (tray *Recipes → Recipe Manager…*, the editor's Recipes menu or `greenshot recipe-manager`) lists
+  the recipes and automatic steps with filters and search: edit, test run, details, permissions, unload, reset.
+- The **recipe editor** (*Recipes → Recipe Editor…* or `greenshot recipe-editor [id]`) is the visual editor of Windows: the
+  steps from the toolbox on a canvas, connected by dragging from a pin to a pin (Alt + click on a pin removes its arrows),
+  the inspector of every step, the recipe with its options, start steps, triggers and error routes, automatic steps,
+  undo, auto-layout, JSON and Mermaid views and test runs. The canvas pans with a right, middle or empty-space drag and
+  the wheel, Ctrl + wheel zooms. Annotations can be taken from an open image editor or a .greenshot file.
 
-These instructions are made to assist developers in getting started with Greenshot so they can contribute to the repository. Please verify system prerequisites are met before trying to build.
+## Build, run, test
 
-IDE System Requirements:
-------------------------
-
-* Windows OS environment
-* Visual Studio 2026 (the native projects use the v145 C++ toolset), with the **Desktop development with C++** workload, MSVC v145 x64/x86 build tools, and a Windows 10 SDK
-* .NET SDK 10.0.100 or newer (Greenshot.Mcp targets .NET 10)
-* .NET Framework 4.8 Developer Pack / targeting pack
-
-Build Instructions:
--------------------
-
-* Open Visual Studio 2026
-* Clone GitHub Repository using Visual Studio, using the link in the green code button above. Alternatively, you can download the repository to your machine and open the solution file located in /src/Greenshot.sln.
-* Choose Build->Build Solution in Visual Studio to build binaries.
-* Verify all components are built successfully.
-* You are ready to start contributing to Greenshot.
-
-Command-line build:
--------------------
-
-Use Visual Studio's MSBuild with `msbuild src\Greenshot.sln /p:Configuration=Debug /t:Build /v:minimal` to build the release version. Use MSBuild rather than `dotnet build`.
-
-Solution configurations:
-------------------------
-
-| Configuration | Builds | Output |
-|---|---|---|
-| Debug (the default) | Everything but the installer project: Greenshot, the plugins, greenshot-cli.exe and greenshot-proxy, greenshot-mcp, the tests | `src\Greenshot\bin\Debug` |
-| Release | Everything, plus the release files: checksum.SHA256, the SBOM, Greenshot Light, the installers and greenshot-mcp | `src\Greenshot\bin\Release` and `installer\` |
-| Debug Light | Greenshot Light only: Greenshot, Greenshot.Base, Greenshot.Editor (and the build tasks) | `src\Greenshot\bin\Debug-Light` |
-| Release Light | The same, optimized | `src\Greenshot\bin\Release-Light` |
-
-Debug never makes checksums, an SBOM or installers; only Release does.
-
-Running tests:
---------------
-
-The xUnit test project is `src\Greenshot.Tests\Greenshot.Tests.csproj`. Build the solution with Visual Studio MSBuild first, then run the tests:
-
-```powershell
-dotnet test src\Greenshot.Tests\Greenshot.Tests.csproj --configuration Debug
+```
+dotnet build
+dotnet run --project src/Greenshot.Linux                # starts in the tray
+dotnet run --project src/Greenshot.Linux -- capture region
+dotnet test
 ```
 
-Tests that need clipboard or desktop interaction require an active, unlocked Windows session; interactive-desktop tests are skipped when the session is locked or inactive.
+`packaging/install.sh` publishes a release build to `~/.local/lib/greenshot`, links `~/.local/bin/greenshot`
+and adds the menu entry and icons. `install.sh --autostart` also starts Greenshot with the session.
 
-Greenshot Light is the basics only: no plugins, no AI tools (greenshot-mcp) and no browser extension. That code is not in its Greenshot.exe at all: it is left out with `#if !GREENSHOT_LIGHT` and `<Compile Remove>` in Greenshot.csproj, and the build fails when one of those types is still in the exe. Pick "Debug Light" in the solution configuration dropdown to run it with F5. On the command line, `dotnet build src\Greenshot\Greenshot.csproj -c DebugLight` (or `/p:GreenshotEdition=Light`) does the same.
+## Packages
 
-The edition is in Greenshot.exe (`[AssemblyMetadata("GreenshotEdition", "Light")]` and the product name in its file properties); `Greenshot.Base.Core.EditionInfo` reads it, for the About window, the tray icon, the log and the bug reports. Another edition is another value of the `GreenshotEdition` property (see `src\Directory.Build.props`).
+The desktop knows Greenshot as `org.getgreenshot.Greenshot` (desktop file, icon, AppStream data). All packages use
+`packaging/stage.sh`, which publishes the program and puts the files under a prefix:
 
-Adding images:
---------------
+| Package | Files | Notes |
+|---|---|---|
+| RPM (Fedora, openSUSE) | `packaging/rpm/greenshot.spec` | `packaging/source-tarball.sh` makes the source; the build restores NuGet packages (COPR: enable networking). Needs `dotnet-runtime-10.0`, `wl-clipboard`. Tested with rpmbuild on Fedora 44 |
+| AUR (Arch) | `packaging/aur/PKGBUILD` | The source tarball of `source-tarball.sh` attached to the release; checksum to fill in per release. Not tested (no makepkg here) |
+| Flatpak | `packaging/flatpak/org.getgreenshot.Greenshot.yml` | `flatpak/generate-sources.sh` lists the NuGet packages for the offline build; screenshots through the portal (no grim in the sandbox), wl-clipboard bundled. Not tested yet (no flatpak-builder here). In the sandbox Greenshot probably can't identify AI tools (their processes are in another PID namespace), it then refuses them |
 
-Images, icons and sounds for Windows Forms are embedded as plain files, not in .resx files: binary data in a .resx needs System.Resources.Extensions and its dependencies in the output, and the build fails when a .resx contains anything but strings.
+## Command line
 
-* An image of the editor goes to `src\Greenshot.Editor\Resources\<control>.Image.png`, e.g. `btnSave.Image.png`. The wildcard `EmbeddedResource` in Greenshot.Editor.csproj (LogicalName `Greenshot.Editor.Forms.ImageEditorForm.%(Filename)`) picks it up, nothing else to add there. The icons of the tray menu work the same way with `src\Greenshot\Resources\Tray` (LogicalName `Greenshot.Shell.TrayMenu.%(Filename)`).
-* Anything else: `<EmbeddedResource Include="..." LogicalName="<Namespace>.<Type>.<name>" />` in the project, the type being the one the resource belongs to.
-* Load it with `EmbeddedResources.GetImage`, `GetIcon` or `GetBytes(typeof(<Type>), "<name>")`; the caller disposes what it gets.
-* Never set an image with the Image property in the Windows Forms designer, it writes the image into the .resx. Assign it in the code of the form, e.g. in `ApplyImages()` of ImageEditorForm.cs.
-* WPF is not affected: its images are `Resource` items with pack URIs, as before.
+`greenshot` is also the client of the running Greenshot, like `greenshot-cli` on Windows: it passes its command line on,
+prints what Greenshot answers and exits with its exit code. When Greenshot doesn't run, it is started in the tray first.
 
-Known vulnerability warnings:
------------------------------
+```
+greenshot -l                                  # the recipes with a command line trigger (--json for JSON)
+greenshot -i convert                          # what a recipe does, its arguments and outputs
+greenshot -r convert --file shot.png --format webp
+greenshot -r ocr file=scan.png --json         # the result as JSON: status, exit code, output, variables
+greenshot -r ocr file=scan.png -q '${payload.text}'
+greenshot -r upload file=a.png --async        # don't wait
+greenshot -f a.png b.png                      # open in the editor (also: greenshot a.png)
+greenshot --reload                            # read greenshot.ini and the recipes again
+greenshot greenshot://recipe-editor           # a Greenshot link
+```
 
-This is for Greenshot 1.4.x, Greenshot 1.3 doesn't use ImageSharp!
-Some NuGet audit warnings are suppressed with `NuGetAuditSuppress` in `src\Directory.Build.props`, because they don't apply to Greenshot or are worked around. The reasons are listed here. Remove the suppression when the package is updated.
+A recipe runs from the command line when it has an active Commandline trigger: only the arguments it declares are
+accepted, converted to their type (paths are resolved against the current folder), its Stdout and Stderr steps print
+while it runs and a Stderr step sets the exit code; 2 means a wrong command line. `greenshot recipe <id>` (without
+dashes) starts any recipe without waiting, for key bindings.
 
-**SixLabors.ImageSharp 2.1.13.** These advisories are fixed only in 4.1.2, which no longer supports .NET Framework, and there is no 2.1.x fix. Greenshot only loads and saves files with ImageSharp when "beta tester" is on (`ImageSharpFileFormatHandler`); otherwise System.Drawing is used.
+The socket is the one of the single instance, `$XDG_RUNTIME_DIR/greenshot/`, which only the user can open; Greenshot
+also checks the user of each connection. The protocol is the one of the named pipe of Windows (length-prefixed JSON, a
+HELLO frame with the source, text frames for a terminal). A file manager (`greenshot --open-with`, the desktop file) may
+only open files, a `greenshot:` link (`greenshot --url`, registered for `x-scheme-handler/greenshot` by `install.sh`)
+only show windows and run recipes whose Commandline trigger allows links (`AllowBrowserInvocation`).
 
-| Advisory | Severity | What it is | Why Greenshot is not affected |
-|---|---|---|---|
-| [GHSA-wmxv-xphr-5c9g](https://github.com/advisories/GHSA-wmxv-xphr-5c9g) | Moderate | A crafted BigTIFF makes the EXIF reader loop for a long time | Worked around: ImageSharp doesn't load .tif/.tiff, WIC does (PR #1472) |
-| [GHSA-gwg2-r3hj-4w44](https://github.com/advisories/GHSA-gwg2-r3hj-4w44) | Moderate | A crafted ICC profile causes a large allocation | In 2.x only reached by reading `IccProfile.Entries`, which Greenshot doesn't do |
-| [GHSA-j3p4-wp97-rph4](https://github.com/advisories/GHSA-j3p4-wp97-rph4) | High | Out-of-bounds write in `HistogramEqualization` on a float TIFF decoded as `HalfVector4` | Greenshot uses neither, and no longer decodes TIFF with ImageSharp |
-| [GHSA-j9gm-c75j-xc9q](https://github.com/advisories/GHSA-j9gm-c75j-xc9q) | High | Out-of-bounds write in the TIFF encoder with CCITT Group 3 compression | Needs a 1-bit CCITT encode, set directly or kept from a decoded TIFF; Greenshot saves 8 or 24 bit with default compression from a GDI+ bitmap |
-| [GHSA-jjfr-hcj7-qf5w](https://github.com/advisories/GHSA-jjfr-hcj7-qf5w) | High | Out-of-bounds write in the TIFF encoder with CCITT Group 4 compression | Same as above |
+## AI tools (MCP)
 
-How to contribute:
-------------------
+`greenshot-mcp`, installed next to `greenshot`, is an MCP server (stdio) for AI tools like Claude Code or an editor with an
+AI assistant, the `greenshot-mcp.exe` of Windows. Switch AI tools on in Settings → AI tools and add the server to the AI
+tool, e.g. `claude mcp add greenshot -- ~/.local/lib/greenshot/greenshot-mcp`. It offers `list_windows`, the recipes with
+an AI tool trigger (built in: `capture_window`, `capture_region`, `capture_screen`, each with optional OCR) and the recipe
+authoring tools (`get_recipe_catalog`, `validate_recipe`, `propose_recipe`, `update_recipe`).
 
-* Create your own fork of the main repository
-* Make desired changes (REMEMBER: keep commits small and concise, don't try to add multiple separate changes at once)
-* Submit a pull request for review. Your request will be reviewed and either accepted, denied, or you may be asked to make revisions before your code is accepted.
+- Off until switched on; then every program is asked once ("Allow" / "Don't Allow", on top, without the keyboard focus,
+  the buttons only react after a second). Greenshot identifies the program itself from `/proc`: the peer of the socket
+  must be `greenshot-mcp` from Greenshot's folder, the AI tool is the program which started it (shells skipped, for
+  `node` or `python` with its script).
+- Windows of excluded applications (password managers by default; process name or app id) are never listed and are
+  blacked out in every screenshot an AI tool takes. Only Sway and Hyprland tell where windows are: on other desktops
+  `list_windows` has only the displays, and AI tools can't take screenshots while the exclusion list isn't empty.
+- On Wayland a window is captured as it is on the screen, what covers it is in the picture (blacked out when excluded).
+- A proposed recipe is shown in the approval window and saved to `Recipes/AI` next to greenshot.ini only when approved,
+  with its triggers switched off.
+
+## Hotkeys
+
+Wayland doesn't let an application grab keys. Greenshot uses the GlobalShortcuts portal where the desktop offers it
+(KDE Plasma, GNOME 48+, Hyprland); the desktop asks you to confirm the keys at the first start.
+
+Elsewhere bind the commands in the compositor. They talk to the running Greenshot, which starts if it doesn't run yet.
+
+Sway (`~/.config/sway/config`):
+
+```
+bindsym Print exec greenshot capture region
+bindsym Alt+Print exec greenshot capture activewindow
+bindsym Ctrl+Print exec greenshot capture fullscreen
+bindsym Shift+Print exec greenshot capture last
+exec greenshot
+```
+
+Hyprland (`~/.config/hypr/hyprland.conf`):
+
+```
+bind = , Print, exec, greenshot capture region
+bind = ALT, Print, exec, greenshot capture activewindow
+bind = CTRL, Print, exec, greenshot capture fullscreen
+bind = SHIFT, Print, exec, greenshot capture last
+exec-once = greenshot
+```
+
+## Settings
+
+The tray menu has *Preferences…*, `greenshot settings` opens them too. They are stored in
+`~/.config/greenshot/greenshot.ini`, the same format and key names as on Windows (the settings window has a button to open it).
+The settings used so far: `OutputDestinations` (`Picker`, `FileDefault`, `FileWithDialog`, `Clipboard`), `OutputFilePath`,
+`OutputFileFilenamePattern`, `OutputFileFormat` (`png`, `jpg`, `webp`), `OutputFileJpegQuality`, `OutputFileAllowOverwrite`,
+`OutputFileCopyPathToClipboard`, `CaptureMousepointer`, `CaptureDelay`, `PlayCameraSound`, `ShowTrayNotification`,
+the four hotkeys, and the Linux only `CaptureBackend` (`Auto`, `Grim`, `Portal`).
+
+The log is `~/.local/state/greenshot/greenshot.log`; `GREENSHOT_DEBUG=1` adds details.
+
+## Languages
+
+The language packs are the ones of the Windows version, copied to
+`src/Greenshot.Linux/Languages/greenshot.<language>.ini` and `greenshot.<plugin>.<language>.ini`; translations of those
+belong in the Windows repository first, so both versions get them. Texts only Linux has are in
+`src/Greenshot.Linux/Languages/greenshot-linux.<language>.ini` (section `[Linux]`), translated into all 39
+languages of the Windows version; a missing text falls back to English. These translations were made with an AI model
+following the terms of each Windows language file, a native speaker's review is welcome (Kabyle above all). Without a `Language` in the settings, the language of the system (`LANGUAGE`, `LC_MESSAGES`, `LANG`) is used,
+the closest one available (de-AT finds de-DE). Own files can go to `~/.config/greenshot/Languages`.
+
+Texts which mention Windows (e.g. the autostart) have a Linux text instead. XAML uses `{l:Text Editor.save}`,
+like `wpf:Text` on Windows.
+
+## What Wayland changes
+
+| Windows | Linux | Why |
+|---|---|---|
+| One capture window over all monitors | One per monitor, sharing the selection | Wayland places each window on one output |
+| The crosshair is at the mouse at once | It appears when the mouse or an arrow key moves | Applications can't ask where the pointer is |
+| Window capture everywhere | Sway and Hyprland pick the window on the capture screen; GNOME and KDE in the desktop's own screenshot dialog (Screenshot portal) | Applications can't list other windows |
+| Hotkeys always | GlobalShortcuts portal or compositor bindings | Applications can't grab keys |
+| Capture a window behind others | Only what is visible | The compositor only gives the composed screen |
+
+## Code
+
+```
+  src/Greenshot.Linux.Core     no UI: settings, filename patterns, screen grabbers, compositor queries,
+                               D-Bus portals and notifications, destinations, single instance socket
+  src/Greenshot.Linux.Editor   no UI: the editor model, drawing elements, Skia rendering, undo, effects, .greenshot files
+  src/Greenshot.Linux.Recipes  no UI: the recipe engine of Windows (model, validation, DAG engine, steps, triggers, approval)
+  src/Greenshot.Linux.RecipeEditor  no UI: the view models of the recipe manager and the recipe editor (their windows are in
+                               Greenshot.Linux/RecipeEditing, the canvas is RecipeGraphCanvas instead of Nodify)
+  src/Greenshot.Linux.Plugins  no UI: the plugins (external command, PDF, custom uploader, Box, Dropbox, Jira, Confluence)
+  src/Greenshot.Linux.Mcp      greenshot-mcp, the MCP server for AI tools (talks to Greenshot over its socket)
+  src/Greenshot.Linux          Avalonia: tray, capture screen, picker, editor window, the capture flow (GreenshotController)
+  tests/Greenshot.Linux.Tests  xunit
+  docs/                        the recipe guide and schema with examples, plugins and destinations (from Windows)
+  packaging/                   desktop files, AppStream data, install script, RPM, AUR, Flatpak
+```
+
+- A capture starts with a `ScreenSnapshot`: one picture of the bounding box of all outputs and the layout,
+  so layout coordinates (logical) and image pixels convert both ways, also with mixed scales.
+- The capture screen works in image pixels (`SelectionModel`), so selections are pixel exact on HiDPI screens.
+- The editor is UI free (`EditorController`, `EditorSurface`), the window only passes the mouse and keys on. The same Skia
+  rendering draws the editor view (through Avalonia's Skia lease) and the exported image. Filters read what was drawn
+  below them, like on Windows. Undo keeps the elements as JSON and the image by reference: effects never change an image
+  in place, they return a new one.
+- D-Bus is spoken with Tmds.DBus.Protocol. Its `MessageWriter` is a `ref struct`: always pass it by `ref`,
+  a copy writes bytes the message doesn't account for and the bus disconnects Greenshot.
+
+## Roadmap
+
+1. **Capturing** ✅
+2. **Editor** ✅ (tabs, emoji, crop out, torn edges and reading Windows `.greenshot` files included)
+3. **Settings window, welcome window, languages** ✅ (the Linux only texts in all 39 languages)
+4. **Destinations** ✅ printer, email, OCR and text capture (tesseract), QR codes (ZXing.Net) with the frames on the
+   capture screen and the QR generator
+5. **Plugins**: external command, PDF, custom uploader, Box, Dropbox, Jira, Confluence ✅
+6. **Recipes**: the engine, steps, triggers, approval, options and quick preferences ✅; the recipe manager and the visual
+   editor ✅; the command line ✅; the MCP server for AI tools ✅
+7. **Window capture on GNOME and KDE** (the desktop's screenshot dialog) ✅, fixed size capture ✅
+8. **Packaging**: RPM ✅, AUR and Flatpak written, not tested yet
+
+Not possible on Linux: the Office plugin (COM automation of Microsoft Office). LibreOffice could take its place.
