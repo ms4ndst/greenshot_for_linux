@@ -1,8 +1,8 @@
 # Flatpak of Greenshot for Linux. Build from the repository root:
 #   packaging/flatpak/generate-sources.sh        (once, and when NuGet packages change: nuget-sources.json)
-#   flatpak-builder --user --install --force-clean build-dir packaging/flatpak/org.getgreenshot.Greenshot.yml
+#   flatpak-builder --user --install --force-clean build-dir packaging/flatpak/io.github.ms4ndst.GreenshotForLinux.yml
 # Screenshots go through the Screenshot portal (grim is not in the sandbox), the clipboard through the bundled wl-clipboard.
-app-id: org.getgreenshot.Greenshot
+app-id: io.github.ms4ndst.GreenshotForLinux
 runtime: org.freedesktop.Platform
 runtime-version: '26.08'
 sdk: org.freedesktop.Sdk

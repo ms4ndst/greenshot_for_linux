@@ -8,6 +8,9 @@ packs, `.greenshot` files and recipes. The UI is
 compositor or the xdg-desktop-portal.
 
 The goal is every feature of Greenshot 1.4 that Wayland allows, with the closest equivalent for the ones it doesn't.
+It is an independent project, not made by the Greenshot team, with its own version numbers (starting at 0.1.0); it reads
+the settings, `.greenshot` files and recipes of Greenshot 1.4 for Windows, and recipes which require a plugin version are
+checked against 1.4.0.
 What is done and what isn't possible on Linux is in the [Roadmap](#roadmap).
 
 ## What works now
@@ -157,14 +160,14 @@ and adds the menu entry and icons. `install.sh --autostart` also starts Greensho
 
 ## Packages
 
-The desktop knows Greenshot as `org.getgreenshot.Greenshot` (desktop file, icon, AppStream data). All packages use
+The desktop knows Greenshot as `io.github.ms4ndst.GreenshotForLinux` (desktop file, icon, AppStream data). All packages use
 `packaging/stage.sh`, which publishes the program and puts the files under a prefix:
 
 | Package | Files | Notes |
 |---|---|---|
 | RPM (Fedora, openSUSE) | `packaging/rpm/greenshot.spec` | `packaging/source-tarball.sh` makes the source; the build restores NuGet packages (COPR: enable networking). Needs `dotnet-runtime-10.0`, `wl-clipboard`. Tested with rpmbuild on Fedora 44 |
 | AUR (Arch) | `packaging/aur/PKGBUILD` | The source tarball of `source-tarball.sh` attached to the release; checksum to fill in per release. Not tested (no makepkg here) |
-| Flatpak | `packaging/flatpak/org.getgreenshot.Greenshot.yml` | `flatpak/generate-sources.sh` lists the NuGet packages for the offline build; screenshots through the portal (no grim in the sandbox), wl-clipboard bundled. Not tested yet (no flatpak-builder here). In the sandbox Greenshot probably can't identify AI tools (their processes are in another PID namespace), it then refuses them |
+| Flatpak | `packaging/flatpak/io.github.ms4ndst.GreenshotForLinux.yml` | `flatpak/generate-sources.sh` lists the NuGet packages for the offline build; screenshots through the portal (no grim in the sandbox), wl-clipboard bundled. Not tested yet (no flatpak-builder here). In the sandbox Greenshot probably can't identify AI tools (their processes are in another PID namespace), it then refuses them |
 
 ## Command line
 

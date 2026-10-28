@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>org.getgreenshot.Greenshot</id>
+  <id>io.github.ms4ndst.GreenshotForLinux</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <name>Greenshot</name>
+  <name>Greenshot for Linux</name>
   <summary>Take screenshots, annotate them and send them where they belong</summary>
-  <developer id="org.getgreenshot">
-    <name>Greenshot</name>
+  <developer id="io.github.ms4ndst">
+    <name>ms4ndst</name>
   </developer>
   <description>
     <p>
@@ -21,11 +21,12 @@
       <li>A command line, and access for AI tools through an MCP server, which you switch on and allow per program</li>
     </ul>
     <p>
-      This is the Linux version of Greenshot for Wayland desktops: Sway, Hyprland and other wlroots compositors, GNOME and KDE.
+      This is an independent Linux version of Greenshot for Wayland desktops: Sway, Hyprland and other wlroots compositors,
+      GNOME and KDE. It is not made by the Greenshot team; it reads the settings, files and recipes of Greenshot 1.4 for Windows.
     </p>
   </description>
-  <launchable type="desktop-id">org.getgreenshot.Greenshot.desktop</launchable>
-  <url type="homepage">https://getgreenshot.org/</url>
+  <launchable type="desktop-id">io.github.ms4ndst.GreenshotForLinux.desktop</launchable>
+  <url type="homepage">https://github.com/ms4ndst/greenshot_for_linux</url>
   <url type="bugtracker">https://github.com/ms4ndst/greenshot_for_linux/issues</url>
   <url type="vcs-browser">https://github.com/ms4ndst/greenshot_for_linux</url>
   <categories>
@@ -47,6 +48,6 @@
   </supports>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="1.4.0" date="2026-10-28"/>
+    <release version="0.1.0" date="2026-10-28"/>
   </releases>
 </component>

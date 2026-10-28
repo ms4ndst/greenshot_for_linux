@@ -40,7 +40,7 @@ fi
 
 app="$destdir$prefix/$libdir/greenshot"
 share="$destdir$prefix/share"
-id=org.getgreenshot.Greenshot
+id=io.github.ms4ndst.GreenshotForLinux
 
 dotnet publish "$root/src/Greenshot.Linux/Greenshot.Linux.csproj" -c Release -r "$rid" --self-contained "$self_contained" "${restore[@]}" \
     -p:DebugType=none -p:DebugSymbols=false -o "$app"

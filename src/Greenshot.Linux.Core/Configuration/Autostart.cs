@@ -78,7 +78,7 @@ public static class Autostart
         Name=Greenshot
         Comment=Screenshot tool
         Exec="{executable.Replace("\"", "\\\"")}"
-        Icon=greenshot
+        Icon={AppIdentity.Id}
         Terminal=false
         X-GNOME-Autostart-enabled=true
 

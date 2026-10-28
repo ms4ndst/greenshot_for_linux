@@ -7,7 +7,7 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 data="${XDG_DATA_HOME:-$HOME/.local/share}"
 config="${XDG_CONFIG_HOME:-$HOME/.config}"
-id=org.getgreenshot.Greenshot
+id=io.github.ms4ndst.GreenshotForLinux
 
 for tool in grim wl-copy; do
     command -v "$tool" >/dev/null || echo "Note: $tool is not installed (packages: grim, wl-clipboard), see README.md"
@@ -16,8 +16,10 @@ done
 "$here/stage.sh" --prefix "$HOME/.local"
 
 # The names of earlier versions
-rm -f "$data/applications/greenshot.desktop" "$data/applications/greenshot-url.desktop"
-find "$data/icons/hicolor" -name greenshot.png -o -name greenshot.svg 2>/dev/null | xargs -r rm -f
+rm -f "$data/applications/greenshot.desktop" "$data/applications/greenshot-url.desktop" \
+    "$data/applications/org.getgreenshot.Greenshot.desktop" "$data/applications/org.getgreenshot.Greenshot.Url.desktop" \
+    "$data/metainfo/org.getgreenshot.Greenshot.metainfo.xml"
+find "$data/icons/hicolor" \( -name greenshot.png -o -name greenshot.svg -o -name 'org.getgreenshot.Greenshot.*' \) 2>/dev/null | xargs -r rm -f
 
 command -v xdg-mime >/dev/null && xdg-mime default "$id.Url.desktop" x-scheme-handler/greenshot || true
 

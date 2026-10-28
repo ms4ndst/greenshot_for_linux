@@ -444,7 +444,7 @@ internal sealed class GreenshotController : ISettingsHost, IHotkeyService, IDisp
 
         public Task ShowSettingsAsync() => Dispatcher.UIThread.InvokeAsync(controller.ShowSettings).GetTask();
 
-        public Task ShowAboutAsync() => Dispatcher.UIThread.InvokeAsync(() => ProcessRunner.StartDetached("xdg-open", "https://getgreenshot.org/")).GetTask();
+        public Task ShowAboutAsync() => Dispatcher.UIThread.InvokeAsync(() => ProcessRunner.StartDetached("xdg-open", AppIdentity.Homepage)).GetTask();
 
         public Task ShowLogAsync() => Dispatcher.UIThread.InvokeAsync(() => ProcessRunner.StartDetached("xdg-open", Log.FilePath)).GetTask();
 
@@ -564,7 +564,7 @@ internal sealed class GreenshotController : ISettingsHost, IHotkeyService, IDisp
     /// </summary>
     private (bool, string) IsRequirementAvailable(RecipeRequirement requirement)
     {
-        string version = typeof(GreenshotController).Assembly.GetName().Version?.ToString(3) ?? "1.4.0";
+        string version = AppIdentity.CompatibleVersion;
         string id = requirement.Id.Replace("Greenshot.Plugin.", string.Empty, StringComparison.OrdinalIgnoreCase);
         if (id.Equals("Zxing", StringComparison.OrdinalIgnoreCase) || id.Equals("RecipeEditor", StringComparison.OrdinalIgnoreCase))
         {
@@ -788,7 +788,7 @@ internal sealed class GreenshotController : ISettingsHost, IHotkeyService, IDisp
         AddItem(menu, Texts.Core("contextmenu_settings"), ShowSettings, null);
         AddItem(menu, Texts.Linux("open_log"), () => ProcessRunner.StartDetached("xdg-open", Log.FilePath), null);
         menu.Items.Add(new NativeMenuItemSeparator());
-        AddItem(menu, $"{Texts.Core("contextmenu_about")} ({Program.Version})", () => ProcessRunner.StartDetached("xdg-open", "https://getgreenshot.org/"), null);
+        AddItem(menu, $"{Texts.Core("contextmenu_about")} ({Program.Version})", () => ProcessRunner.StartDetached("xdg-open", AppIdentity.Homepage), null);
         AddItem(menu, Texts.Core("contextmenu_exit"), Exit, null);
         return menu;
     }

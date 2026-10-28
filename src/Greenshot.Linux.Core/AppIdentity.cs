@@ -26,5 +26,16 @@ namespace Greenshot.Linux.Core;
 /// </summary>
 public static class AppIdentity
 {
-    public const string Id = "org.getgreenshot.Greenshot";
+    public const string Id = "io.github.ms4ndst.GreenshotForLinux";
+
+    /// <summary>
+    /// The project page, opened by "About Greenshot"
+    /// </summary>
+    public const string Homepage = "https://github.com/ms4ndst/greenshot_for_linux";
+
+    /// <summary>
+    /// The version of Greenshot for Windows whose settings, files, recipes and plugins this version matches. The Linux version
+    /// has its own numbering; the "requires" of a recipe name Windows plugin versions and are checked against this one.
+    /// </summary>
+    public const string CompatibleVersion = "1.4.0";
 }
