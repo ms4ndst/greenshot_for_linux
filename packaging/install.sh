@@ -15,6 +15,14 @@ done
 
 "$here/stage.sh" --prefix "$HOME/.local"
 
+# The desktop files start the program by its full path: launchers started by the compositor (rofi, wofi, fuzzel)
+# often don't have ~/.local/bin in their PATH
+program="$HOME/.local/bin/greenshot"
+use_full_path() {
+    sed -i "s|^Exec=greenshot |Exec=\"${program//|/\\|}\" |" "$@"
+}
+use_full_path "$HOME/.local/share/applications/$id.desktop" "$HOME/.local/share/applications/$id.Url.desktop"
+
 # The names of earlier versions
 rm -f "$data/applications/greenshot.desktop" "$data/applications/greenshot-url.desktop" \
     "$data/applications/org.getgreenshot.Greenshot.desktop" "$data/applications/org.getgreenshot.Greenshot.Url.desktop" \
@@ -26,6 +34,7 @@ command -v xdg-mime >/dev/null && xdg-mime default "$id.Url.desktop" x-scheme-ha
 if [[ "${1:-}" == "--autostart" ]]; then
     mkdir -p "$config/autostart"
     install -m 644 "$here/$id.desktop" "$config/autostart/greenshot.desktop"
+    use_full_path "$config/autostart/greenshot.desktop"
     echo "Greenshot starts with your session"
 fi
 
