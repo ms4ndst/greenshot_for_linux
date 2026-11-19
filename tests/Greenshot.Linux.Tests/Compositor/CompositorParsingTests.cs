@@ -22,6 +22,7 @@
 using System.Text.Json;
 using Greenshot.Linux.Core.Capturing;
 using Greenshot.Linux.Core.Compositor;
+using SkiaSharp;
 
 namespace Greenshot.Linux.Tests.Compositor;
 
@@ -107,5 +108,54 @@ public class CompositorParsingTests
             """);
         var windows = HyprlandCompositor.ParseVisibleClients(monitors.RootElement, clients.RootElement);
         Assert.Equal(["Float", "Tiled"], windows.Select(w => w.Title));
+    }
+
+    [Fact]
+    public void Niri_window_has_its_id_and_size_but_no_place()
+    {
+        using var json = JsonDocument.Parse("""
+            {"id":16,"title":"Editor","app_id":"code","pid":4242,"workspace_id":5,"is_focused":true,"is_floating":false,
+             "layout":{"pos_in_scrolling_layout":[4,1],"tile_size":[1904.0,1147.0],"window_size":[1904,1147],
+                       "tile_pos_in_workspace_view":null,"window_offset_in_tile":[0.0,0.0]}}
+            """);
+        var window = NiriCompositor.ParseWindow(json.RootElement)!;
+        Assert.Equal(("Editor", "code", 4242, "16", true), (window.Title, window.AppId, window.ProcessId, window.Id, window.Focused));
+        Assert.Equal(new LayoutRect(0, 0, 1904, 1147), window.Bounds);
+    }
+
+    [Fact]
+    public void Niri_pick_window_cancelled_is_no_window()
+    {
+        using var json = JsonDocument.Parse("null");
+        Assert.Null(NiriCompositor.ParseWindow(json.RootElement));
+    }
+
+    [Fact]
+    public void Niri_window_picture_loses_the_shadow()
+    {
+        // A 40x30 window at 6,4 in a 52x44 picture, with a half transparent shadow around it
+        using var image = new SKBitmap(52, 44, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+        image.Erase(new SKColor(0, 0, 0, 80));
+        for (int y = 4; y < 34; y++)
+        {
+            for (int x = 6; x < 46; x++)
+            {
+                image.SetPixel(x, y, SKColors.White);
+            }
+        }
+
+        using var trimmed = NiriCompositor.TrimShadow(image, 40, 30);
+        Assert.Equal((40, 30), (trimmed.Width, trimmed.Height));
+        Assert.Equal(255, trimmed.GetPixel(0, 0).Alpha);
+        Assert.Equal(255, trimmed.GetPixel(39, 29).Alpha);
+    }
+
+    [Fact]
+    public void Niri_see_through_window_picture_is_kept()
+    {
+        using var image = new SKBitmap(52, 44, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+        image.Erase(new SKColor(0, 0, 0, 200));
+        using var kept = NiriCompositor.TrimShadow(image, 40, 30);
+        Assert.Equal((52, 44), (kept.Width, kept.Height));
     }
 }

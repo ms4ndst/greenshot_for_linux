@@ -771,7 +771,7 @@ internal sealed class GreenshotController : ISettingsHost, IHotkeyService, IDisp
         var menu = new NativeMenu();
         AddItem(menu, Texts.Core("contextmenu_capturearea"), () => _ = CaptureAsync(CaptureMode.Region), _settings.RegionHotkey);
         AddItem(menu, Texts.Core("contextmenu_capturelastregion"), () => _ = CaptureAsync(CaptureMode.LastRegion), _settings.LastregionHotkey);
-        if (_compositor.KnowsWindows || _windowPicker != null)
+        if (_compositor.KnowsWindows || _compositor is IWindowCapturer || _windowPicker != null)
         {
             AddItem(menu, Texts.Core("contextmenu_capturewindow"), () => _ = CaptureAsync(CaptureMode.Window), null);
             AddItem(menu, Texts.Linux("contextmenu_captureactivewindow"), () => _ = CaptureAsync(CaptureMode.ActiveWindow), _settings.WindowHotkey);
@@ -1144,7 +1144,7 @@ internal sealed class GreenshotController : ISettingsHost, IHotkeyService, IDisp
                 CaptureMode? mode = id switch
                 {
                     ShortcutRegion => CaptureMode.Region,
-                    ShortcutWindow => _compositor.KnowsWindows && !_settings.CaptureWindowsInteractive ? CaptureMode.ActiveWindow : CaptureMode.Window,
+                    ShortcutWindow => (_compositor.KnowsWindows || _compositor is IWindowCapturer) && !_settings.CaptureWindowsInteractive ? CaptureMode.ActiveWindow : CaptureMode.Window,
                     ShortcutFullscreen => CaptureMode.FullScreen,
                     ShortcutLastRegion => CaptureMode.LastRegion,
                     _ => null,

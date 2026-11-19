@@ -273,7 +273,7 @@ like `wpf:Text` on Windows.
 |---|---|---|
 | One capture window over all monitors | One per monitor, sharing the selection | Wayland places each window on one output |
 | The crosshair is at the mouse at once | It appears when the mouse or an arrow key moves | Applications can't ask where the pointer is |
-| Window capture everywhere | Sway and Hyprland pick the window on the capture screen; GNOME and KDE in the desktop's own screenshot dialog (Screenshot portal) | Applications can't list other windows |
+| Window capture everywhere | Sway and Hyprland pick the window on the capture screen; niri lets you click the window and captures it alone (also when it is covered; niri puts the picture on the clipboard too); GNOME and KDE in the desktop's own screenshot dialog (Screenshot portal) | Applications can't list other windows |
 | Hotkeys always | GlobalShortcuts portal or compositor bindings | Applications can't grab keys |
 | Capture a window behind others | Only what is visible | The compositor only gives the composed screen |
 
@@ -314,7 +314,7 @@ like `wpf:Text` on Windows.
 5. **Plugins**: external command, PDF, custom uploader, Box, Dropbox, Jira, Confluence ✅
 6. **Recipes**: the engine, steps, triggers, approval, options and quick preferences ✅; the recipe manager and the visual
    editor ✅; the command line ✅; the MCP server for AI tools ✅
-7. **Window capture on GNOME and KDE** (the desktop's screenshot dialog) ✅, fixed size capture ✅
+7. **Window capture on GNOME and KDE** (the desktop's screenshot dialog) ✅, on niri (`niri msg pick-window` and `screenshot-window`) ✅, fixed size capture ✅
 8. **Packaging**: RPM ✅, AUR and Flatpak written, not tested yet
 
 Not possible on Linux: the Office plugin (COM automation of Microsoft Office). LibreOffice could take its place.

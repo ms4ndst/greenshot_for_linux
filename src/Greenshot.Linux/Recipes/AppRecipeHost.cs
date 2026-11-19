@@ -129,7 +129,29 @@ internal sealed class AppRecipeHost(GreenshotController controller) : IRecipeHos
     {
         var compositor = controller.Compositor;
         WindowInfo? window = null;
-        if (compositor.KnowsWindows)
+        if (UsableWindowCapturer(compositor) is { } capturer)
+        {
+            // niri: the focused window or the one with the title, captured by niri
+            if (string.IsNullOrEmpty(titlePattern))
+            {
+                window = await capturer.GetFocusedWindowAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                var regex = new Regex(titlePattern, matchCase ? RegexOptions.None : RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+                window = (await capturer.GetWindowsAsync().ConfigureAwait(false)).FirstOrDefault(w => regex.IsMatch(w.Title));
+                if (window == null)
+                {
+                    return null!;
+                }
+            }
+
+            if (window != null)
+            {
+                return new CapturePayload(await CaptureSingleWindowAsync(capturer, window, captureMouse, cancellationToken).ConfigureAwait(false));
+            }
+        }
+        else if (compositor.KnowsWindows)
         {
             if (string.IsNullOrEmpty(titlePattern))
             {
@@ -240,6 +262,11 @@ internal sealed class AppRecipeHost(GreenshotController controller) : IRecipeHos
         try
         {
             var compositor = controller.Compositor;
+            if (mode == RecipeCaptureMode.Window && UsableWindowCapturer(compositor) is { } capturer)
+            {
+                return await PickWindowAsync(payload, snapshot, capturer, controller.Settings.CaptureMousepointer, cancellationToken).ConfigureAwait(false);
+            }
+
             if (mode == RecipeCaptureMode.Window && !compositor.KnowsWindows && controller.WindowPicker is { } picker)
             {
                 return await PickWindowAsync(payload, snapshot, picker, cancellationToken).ConfigureAwait(false);
@@ -294,14 +321,50 @@ internal sealed class AppRecipeHost(GreenshotController controller) : IRecipeHos
         }
 
         var details = new CaptureDetails { DateTime = DateTime.Now, Mode = CaptureMode.Window, Title = Greenshot.Linux.Core.Naming.FilenamePattern.DefaultTitle };
+        return ReplaceWithWindow(payload, snapshot, new Capture(image, details));
+    }
+
+    /// <summary>
+    /// niri: the user clicks the window, niri captures it alone; its picture replaces the one of the screen
+    /// </summary>
+    private static async Task<SelectionOutcome> PickWindowAsync(ICapturePayload payload, ScreenSnapshot snapshot, IWindowCapturer capturer,
+        bool captureMouse, CancellationToken cancellationToken)
+    {
+        var window = await capturer.PickWindowAsync(cancellationToken).ConfigureAwait(false);
+        if (window == null)
+        {
+            return null!;
+        }
+
+        var capture = await CaptureSingleWindowAsync(capturer, window, captureMouse, cancellationToken, CaptureMode.Window).ConfigureAwait(false);
+        return ReplaceWithWindow(payload, snapshot, capture);
+    }
+
+    private static SelectionOutcome ReplaceWithWindow(ICapturePayload payload, ScreenSnapshot snapshot, Capture capture)
+    {
         payload.RawCapture?.Dispose();
-        payload.RawCapture = new Capture(image, details);
+        payload.RawCapture = capture;
         payload.Surface?.Dispose();
         payload.Surface = null;
         payload.Metadata.Remove(SnapshotKey);
         snapshot.Dispose();
-        return new SelectionOutcome(RecipeCaptureMode.Window, details.Title);
+        return new SelectionOutcome(RecipeCaptureMode.Window, capture.Details.Title);
     }
+
+    private static async Task<Capture> CaptureSingleWindowAsync(IWindowCapturer capturer, WindowInfo window, bool captureMouse,
+        CancellationToken cancellationToken, CaptureMode mode = CaptureMode.ActiveWindow)
+    {
+        var image = await capturer.CaptureWindowAsync(window, captureMouse, cancellationToken).ConfigureAwait(false);
+        var title = string.IsNullOrWhiteSpace(window.Title) ? Greenshot.Linux.Core.Naming.FilenamePattern.DefaultTitle : window.Title;
+        return new Capture(image, new CaptureDetails { DateTime = DateTime.Now, Mode = mode, Title = title });
+    }
+
+    /// <summary>
+    /// The compositor captures single windows (niri). Not for AI tools: their captures must black out excluded applications,
+    /// which needs the places of the windows
+    /// </summary>
+    private static IWindowCapturer? UsableWindowCapturer(ICompositor compositor) =>
+        !compositor.KnowsWindows && !AiToolCapture.IsActive ? compositor as IWindowCapturer : null;
 
     #endregion
 

@@ -20,6 +20,7 @@
  */
 
 using Greenshot.Linux.Core.Capturing;
+using SkiaSharp;
 
 namespace Greenshot.Linux.Core.Compositor;
 
@@ -55,6 +56,30 @@ public interface ICompositor
     Task<IReadOnlyList<WindowInfo>> GetVisibleWindowsAsync();
 }
 
+/// <summary>
+/// A compositor which doesn't tell where windows are on the screen, but picks and captures a single window itself (niri).
+/// The windows it returns have no bounds.
+/// </summary>
+public interface IWindowCapturer
+{
+    Task<WindowInfo?> GetFocusedWindowAsync();
+
+    /// <summary>
+    /// All open windows, for finding one by its title
+    /// </summary>
+    Task<IReadOnlyList<WindowInfo>> GetWindowsAsync();
+
+    /// <summary>
+    /// The user clicks a window; null when the user cancelled
+    /// </summary>
+    Task<WindowInfo?> PickWindowAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The picture of the window alone, also when it is covered or scrolled out of view
+    /// </summary>
+    Task<SKBitmap> CaptureWindowAsync(WindowInfo window, bool includeCursor, CancellationToken cancellationToken);
+}
+
 public static class CompositorDetector
 {
     public static ICompositor Detect()
@@ -67,6 +92,11 @@ public static class CompositorDetector
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("HYPRLAND_INSTANCE_SIGNATURE")) && ProcessRunner.IsOnPath("hyprctl"))
         {
             return new HyprlandCompositor();
+        }
+
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NIRI_SOCKET")) && ProcessRunner.IsOnPath("niri"))
+        {
+            return new NiriCompositor();
         }
 
         return new GenericCompositor(Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP") ?? "unknown");
